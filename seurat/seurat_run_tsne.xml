@@ -1,12 +1,18 @@
 <tool id="seurat_run_tsne" name="Seurat RunTSNE" version="2.3.1+galaxy1">
     <description>run t-SNE dimensionality reduction</description>
+	<requirements>
+                <requirement type="package" version="3.5.1">r-base</requirement>
+		<requirement type="package" version="1.20.2">r-getopt</requirement>
+		<requirement type="package" version="1.3.2">r-optparse</requirement>
+		<requirement type="package" version="2.3.4">r-seurat</requirement>
+        </requirements>
     <macros>
         <import>seurat_macros.xml</import>
     </macros>
     <expand macro="requirements" />
     <expand macro="version" />
     <command detect_errors="exit_code"><![CDATA[
-seurat-run-tsne.R
+Rscript /cvmfs/soft.galaxy/v2.1/server/tools/genap2_ebi_scRNAseq_tools/seurat/seurat-run-tsne.R
 
 --input-object-file '$input'
 
