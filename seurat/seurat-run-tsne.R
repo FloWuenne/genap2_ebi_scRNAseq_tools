@@ -3,24 +3,9 @@
 # Load optparse we need to check inputs
 
 suppressPackageStartupMessages(require(optparse))
+suppressPackageStartupMessages(require(workflowscriptscommon))
+suppressPackageStartupMessages(require(Seurat))
 
-## Define function
-wsc_parse_args <- function(option_list, mandatory=c()){
-
-  parser = OptionParser(option_list=option_list)
-  opt = parse_args(parser, convert_hyphens_to_underscores = TRUE)
-
-  # Check options
-
-  for (comp in mandatory){
-    if ((! comp %in% names(opt)) || is.na(opt[[comp]])){
-      print_help(parser)
-      stop(paste0("Mandatory argment '", comp, "' not supplied"))
-    }
-  }
-
-  opt
-}
 
 # parse options
 
@@ -122,9 +107,6 @@ if ( ! is.null(dims_use)){
   dims_use <- wsc_parse_numeric(opt, 'dims_use')
 }
 
-# Now we're hapy with the arguments, load Seurat and do the work
-
-suppressPackageStartupMessages(require(Seurat))
 
 # Input from serialized R object
 
