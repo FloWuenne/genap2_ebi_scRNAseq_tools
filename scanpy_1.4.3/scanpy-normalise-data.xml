@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tool id="scanpy_normalise_data" name="Scanpy NormaliseData" version="@TOOL_VERSION@+galaxy10" profile="@PROFILE@">
+  <description>to make all cells having the same total expression</description>
+  <macros>
+    <import>scanpy_macros2.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <command detect_errors="exit_code"><![CDATA[
+ln -s '${input_obj_file}' input.h5 &&
+PYTHONIOENCODING=utf-8 scanpy-normalise-data
+    --normalize-to ${scale_factor}
+    --fraction ${fraction}
+    --save-raw ${save_raw}
+    ${log_transform}
+    @INPUT_OPTS@
+    @OUTPUT_OPTS@
+    @EXPORT_MTX_OPTS@
+]]></command>
+
+  <inputs>
+    <expand macro="input_object_params"/>
+    <expand macro="output_object_params"/>
+    <param name="scale_factor" argument="--normalize-to" type="float" value="1e4" min="0"
+           label="Target number to normalise to" help="Aimed counts per cell after normalisation."/>
+    <param name="fraction" argument="--fraction" type="float" value="1" min="0" max="1"
+           label="Exclude top expressed genes until the remaining account for no greater than specified fraction of total counts"
+           help="Only non-excluded genes will sum up the target number."/>
+    <param name="log_transform" argument="--no-log-transform" type="boolean" truevalue="" falsevalue="--no-log-transform" checked="True"
+           label="Apply log transform?" help="If enabled, will apply a log transformation following normalisation."/>
+    <param name="save_raw" argument="--save-raw" type="boolean" truevalue="yes" falsevalue="no" checked="true"
+           label="Save normalised data in `.raw`" help="The saved normalised data are log1p transformed."/>
+    <expand macro="export_mtx_params"/>
+  </inputs>
+
+  <outputs>
+    <expand macro="output_data_obj" description="Normalised data"/>
+    <expand macro="export_mtx_outputs"/>
+  </outputs>
+
+  <tests>
+    <test>
+      <param name="input_obj_file" value="filter_genes.h5"/>
+      <param name="input_format" value="anndata"/>
+      <param name="output_format" value="anndata"/>
+      <param name="scale_factor" value="1e4"/>
+      <param name="save_raw" value="false"/>
+      <output name="output_h5" file="normalise_data.h5" ftype="h5" compare="sim_size"/>
+    </test>
+  </tests>
+
+  <help><![CDATA[
+=============================================================
+Normalise total counts per cell (`scanpy.pp.normalize_total`)
+=============================================================
+
+Normalise each cell by total counts over all genes (excluding top expressed
+genes if so required), so that every cell has the same total count after
+normalisation.
+
+Similar functions are used, for example, by Seurat, Cell Ranger or SPRING.
+
+@HELP@
+
+@VERSION_HISTORY@
+]]></help>
+  <expand macro="citations"/>
+</tool>

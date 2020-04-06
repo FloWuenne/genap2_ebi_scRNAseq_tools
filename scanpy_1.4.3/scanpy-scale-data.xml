@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tool id="scanpy_scale_data" name="Scanpy ScaleData" version="@TOOL_VERSION@+galaxy10" profile="@PROFILE@">
+  <description>to make expression variance the same for all genes</description>
+  <macros>
+    <import>scanpy_macros2.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <command detect_errors="exit_code"><![CDATA[
+ln -s '${input_obj_file}' input.h5 &&
+PYTHONIOENCODING=utf-8 scanpy-scale-data
+    #if $scale_max
+        --max-value '${scale_max}'
+    #end if
+    ${zero_center}
+    @INPUT_OPTS@
+    @OUTPUT_OPTS@
+]]></command>
+
+  <inputs>
+    <expand macro="input_object_params"/>
+    <expand macro="output_object_params"/>
+    <param name="zero_center" type="boolean" checked="true" truevalue="" falsevalue="--no-zero-center"
+           label="Zero center data before scaling"/>
+    <param name="scale_max" argument="--max-value" type="float" min="0" optional="true" label="Truncate to this value after scaling"/>
+  </inputs>
+
+  <outputs>
+    <expand macro="output_data_obj" description="Scaled data"/>
+  </outputs>
+
+  <tests>
+    <test>
+      <param name="input_obj_file" value="find_variable_genes.h5"/>
+      <param name="input_format" value="anndata"/>
+      <param name="output_format" value="anndata"/>
+      <param name="zero_center" value="true"/>
+      <param name="scale_max" value="10"/>
+      <output name="output_h5" file="scale_data.h5" ftype="h5" compare="sim_size"/>
+    </test>
+  </tests>
+
+  <help><![CDATA[
+    .. class:: infomark
+
+    **What it does**
+
+    Scale data to unit variance and (optionally) zero mean (`scanpy.pp.scale`)
+
+    @HELP@
+
+    @VERSION_HISTORY@
+]]></help>
+  <expand macro="citations"/>
+</tool>
