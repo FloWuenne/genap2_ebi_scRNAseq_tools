@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tool id="scanpy_find_variable_genes" name="Scanpy FindVariableGenes" version="@TOOL_VERSION@+galaxy10" profile="@PROFILE@">
+  <description>based on normalised dispersion of expression</description>
+  <macros>
+    <import>scanpy_macros2.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <command detect_errors="exit_code"><![CDATA[
+ln -s '${input_obj_file}' input.h5 &&
+PYTHONIOENCODING=utf-8 scanpy-find-variable-genes
+    --flavor '${method.flavor}'
+#if $method.flavor == 'seurat'
+    --mean-limits ${method.min_mean} ${method.max_mean}
+    --disp-limits ${method.min_disp} ${method.max_disp}
+#else
+    --n-top-genes ${method.n_top_gene}
+#end if
+    --n-bins '${n_bin}'
+    ${filter}
+    @INPUT_OPTS@
+    @OUTPUT_OPTS@
+]]></command>
+
+  <inputs>
+    <expand macro="input_object_params"/>
+    <expand macro="output_object_params"/>
+    <conditional name="method">
+      <param name="flavor" argument="--flavor" type="select" label="Flavor of computing normalised dispersion">
+        <option value="seurat" selected="true">Seurat</option>
+        <option value="cell_ranger">Cell-ranger</option>
+      </param>
+      <when value="seurat">
+        <param name="min_mean" argument="--min-mean" type="float" min="0" value="0.0125"
+               label="Min value for normalised mean expression (in log1p scale)"/>
+        <param name="max_mean" argument="--max-mean" type="float" min="0" value="3"
+               label="Max value for normalised mean expresssion (in log1p scale)"/>
+        <param name="min_disp" argument="--min-disp" type="float" min="0" value="0.5"
+               label="Min value for dispersion of expression"/>
+        <param name="max_disp" argument="--max-disp" type="float" min="0" value="50"
+               label="Max value for dispersion of expresssion"/>
+      </when>
+      <when value="cell_ranger">
+        <param name="n_top_gene" argument="--n-top-genes" type="integer" value="2000"
+               label="Number of top variable genes to keep"/>
+      </when>
+    </conditional>
+    <param name="n_bin" argument="--n-bins" type="integer" value="20" label="Number of bins for binning the mean expression"/>
+    <param name="filter" argument="--subset" type="boolean" truevalue="--subset" falsevalue="" checked="false"
+           label="Remove genes not marked as highly variable"/>
+  </inputs>
+
+  <outputs>
+    <expand macro="output_data_obj" description="Variable genes"/>
+  </outputs>
+
+  <tests>
+    <test>
+      <param name="input_obj_file" value="normalise_data.h5"/>
+      <param name="input_format" value="anndata"/>
+      <param name="output_format" value="anndata"/>
+      <param name="flavor" value="seurat"/>
+      <param name="n_bin" value="20"/>
+      <param name="min_mean" value="0.0125"/>
+      <param name="max_mean" value="3"/>
+      <param name="min_disp" value="0.5"/>
+      <param name="max_disp" value="1e9"/>
+      <output name="output_h5" file="find_variable_genes.h5" ftype="h5" compare="sim_size"/>
+    </test>
+  </tests>
+
+  <help><![CDATA[
+==============================================================
+Mark highly variable genes (`scanpy.pp.highly_variable_genes`)
+==============================================================
+
+Depending on `flavor`, this reproduces the R-implementations of Seurat or Cell Ranger.
+
+The normalized dispersion is obtained by scaling with the mean and standard
+deviation of the dispersions for genes falling into a given bin for mean
+expression of genes. This means that for each bin of mean expression, highly
+variable genes are selected.
+
+@HELP@
+
+@VERSION_HISTORY@
+]]></help>
+  <expand macro="citations">
+    <citation type="doi">10.1038/nbt.3192</citation>
+    <citation type="doi">10.1038/ncomms14049</citation>
+  </expand>
+</tool>

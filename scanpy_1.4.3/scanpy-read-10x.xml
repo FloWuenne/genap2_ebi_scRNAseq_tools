@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tool id="scanpy_read_10x" name="Scanpy Read10x" version="@TOOL_VERSION@+galaxy10" profile="@PROFILE@">
+  <description>into hdf5 object handled by scanpy</description>
+  <macros>
+    <import>scanpy_macros2.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <command detect_errors="exit_code"><![CDATA[
+ln -s '${matrix}' matrix.mtx &&
+ln -s '${genes}' genes.tsv &&
+ln -s '${barcodes}' barcodes.tsv &&
+PYTHONIOENCODING=utf-8 scanpy-read-10x
+    --input-10x-mtx ./
+    --var-names '${var_names}'
+#if $cell_meta:
+    --extra-obs '${cell_meta}'
+#end if
+#if $gene_meta:
+    --extra-var '${gene_meta}'
+#end if
+    @OUTPUT_OPTS@
+]]></command>
+
+  <inputs>
+    <param name="matrix" type="data" format="txt" label="Expression matrix in sparse matrix format (.mtx)"/>
+    <param name="genes" type="data" format="tsv,tabular" label="Gene table"/>
+    <param name="barcodes" type="data" format="tsv,tabular" label="Barcode/cell table"/>
+    <param name="cell_meta" type="data" format="tsv,tabular" label="Cell metadata table" optional="true"
+           help="Requires a header row and index column that matches the barcode/cell table"/>
+    <param name="gene_meta" type="data" format="tsv,tabular" label="Gene metadata table" optional="true"
+           help="Requires a header row and index column that matches the gene table"/>
+    <expand macro="output_object_params"/>
+    <param name="var_names" type="select" label="Attribute used as annotation index" help="If Gene ID is selected the index will point to the gene identifiers (first columns expected) and the gene symbols will be left in a field called 'gene_symbols'.">
+      <option value="gene_ids" selected="true">Gene ID</option>
+      <option value="gene_symbols">Gene symbol</option>
+    </param>
+  </inputs>
+
+  <outputs>
+    <expand macro="output_data_obj" description="${output_format}"/>
+  </outputs>
+
+  <tests>
+    <test>
+      <param name="matrix" value="matrix.mtx"/>
+      <param name="genes" value="genes.tsv"/>
+      <param name="barcodes" value="barcodes.tsv"/>
+      <!-- <param name="cell_meta" value=""/> -->
+      <param name="output_format" value="anndata"/>
+      <output name="output_h5" file="output.h5" ftype="h5" compare="sim_size"/>
+    </test>
+  </tests>
+
+  <help><![CDATA[
+=================================================================
+Read 10x-Genomics-formatted mtx directory (`scanpy.read_10x_mtx`)
+=================================================================
+
+The mtx directory should contain:
+
+1) Raw expression quantification as a sparse matrix in Matrix Market format, where the each column is a gene and each row is a barcode/cell.
+
+2) A gene table of at least two columns where the first column gives the gene IDs.
+
+3) A barcode/cell table of at least one column giving the barcode/cell IDs.
+
+The above-mentioned files can be obtained by running `EBI SCXA Data Retrieval` with a dataset accession or `Human Cell Atlas Matrix Downloader` with a project name/label/UUID.
+
+Additionally, cell and/or gene metadata table can be provided as tab-separated text with a header row and an index column that matches the respective barcode/cell and/or gene table.
+
+
+@HELP@
+
+@VERSION_HISTORY@
+]]></help>
+  <expand macro="citations"/>
+</tool>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tool id="scanpy_filter_cells" name="Scanpy FilterCells" version="@TOOL_VERSION@+galaxy10" profile="@PROFILE@" >
+  <description>based on counts and numbers of genes expressed</description>
+  <macros>
+    <import>scanpy_macros2.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <command detect_errors="exit_code"><![CDATA[
+ln -s '${input_obj_file}' input.h5 &&
+PYTHONIOENCODING=utf-8 scanpy-filter-cells
+#if $gene_name
+    --gene-name '${gene_name}'
+#end if
+#if $parameters
+#for $p in $parameters
+    #set $min = $p.min
+    #set $max = $p.max
+    #if $p.name.startswith('pct_')
+      #set $min = float($min) / 100
+      #set $max = float($max) / 100
+    #end if
+    --param 'c:$p.name' $min $max
+#end for
+#end if
+#if $categories
+    #set cats = ' '.join(["--category 'c:{name}' '{negate}{values}'".format(**$c) for $c in $categories])
+    ${cats}
+#end if
+#if $subsets
+    #set subs = ' '.join(["--subset 'c:{name}' '{subset}'".format(**$s) for $s in $subsets])
+    ${subs}
+#end if
+    @INPUT_OPTS@
+    @OUTPUT_OPTS@
+    @EXPORT_MTX_OPTS@
+    ]]></command>
+
+  <inputs>
+    <expand macro="input_object_params"/>
+    <expand macro="output_object_params"/>
+
+    <param name="gene_name" type="text" optional="true" label="Name of the column in `anndata.var` that contains gene name"
+           help="Used for flagging mitochondria genes (starting with 'MT-'). Leave empty if gene table already has a boolean column called 'mito' that flags MT genes"/>
+
+    <repeat name="parameters" title="Parameters to select cells to keep" min="1">
+      <param name="name" type="text" value="n_genes" label="Name of parameter to filter on" help="for example n_genes or n_counts">
+        <option value="n_genes">n_genes</option>
+        <option value="n_counts">n_counts</option>
+        <option value="pct_counts_mito">pct_counts_mito (only usable if MT genes are flagged or has been pre-calculated)</option>
+      </param>
+      <param name="min" type="float" value="0" min="0" label="Min value" help="Cells with value below min will be discarded."/>
+      <param name="max" type="float" value="1e9" label="Max value" help="Cells with value above max will be discarded."/>
+    </repeat>
+
+    <repeat name="categories" title="Categories to select cells to keep (unless negate is checked)" min="0">
+      <param name="name" type="text" value="" label="Name of the categorical variable to filter on"/>
+      <param name="values" type="text" value="" label="Comma-separated list of categories" help="Cells with these values in this categorical variable will be kept."/>
+      <param name="negate" type="boolean" truevalue="!" falsevalue="" checked="false" label="Apply as negative filter" help="If enabled, specified categories will be removed rather than retained."/>
+    </repeat>
+
+    <repeat name="subsets" title="Subsets to select cells to keep" min="0">
+      <param name="name" type="text" value="" label="Name of the categorical variable to filter on"/>
+      <param name="subset" type="data" format="tabular" label="List of values to keep" help="A one-column headerless text file is required"/>
+    </repeat>
+    <param name="force_recalc" label="Force recalculation of QC vars" type="boolean" truevalue="--force-recalc" falsevalue="" help="If set, it will recalculate pcts and other existing QC vars, overwriting existing ones."/>
+    <expand macro="export_mtx_params"/>
+  </inputs>
+
+  <outputs>
+    <expand macro="output_data_obj" description="Filtered cells"/>
+    <expand macro="export_mtx_outputs"/>
+  </outputs>
+
+  <tests>
+    <test>
+      <param name="input_obj_file" value="read_10x.h5"/>
+      <param name="input_format" value="anndata"/>
+      <param name="output_format" value="anndata"/>
+      <repeat name="parameters">
+        <param name="name" value="n_genes"/>
+        <param name="min" value="200"/>
+        <param name="max" value="2500"/>
+      </repeat>
+      <repeat name="parameters">
+        <param name="name" value="n_counts"/>
+        <param name="min" value="0"/>
+        <param name="max" value="1e9"/>
+      </repeat>
+      <output name="output_h5" file="output.h5" ftype="h5" compare="sim_size"/>
+    </test>
+  </tests>
+
+  <help><![CDATA[
+===================================================================
+Filter cells based on various QC metrics (`scanpy.pp.filter_cells`)
+===================================================================
+
+For instance, only keep cells with at least `min_counts` and at most
+`max_counts` UMI and/or at least `min_genes` expressed genes and/or at most
+`max_mito_percent` mitocondria expression. This is to filter measurement
+outliers, i.e., "unreliable" observations.
+
+@HELP@
+
+@VERSION_HISTORY@
+]]></help>
+  <expand macro="citations"/>
+</tool>
