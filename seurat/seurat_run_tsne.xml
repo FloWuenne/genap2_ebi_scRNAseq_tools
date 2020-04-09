@@ -13,7 +13,7 @@
     <expand macro="requirements" />
     <expand macro="version" />
     <command detect_errors="exit_code"><![CDATA[
-Rscript /cvmfs/soft.galaxy/v2.1/server/tools/florian/genap2_ebi_scRNAseq_tools/seurat/seurat-run-tsne.R
+Rscript '$__tool_directory__/seurat-run-tsne.R'
 
 --input-object-file '$input'
 
